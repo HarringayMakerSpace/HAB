@@ -55,7 +55,7 @@ const uint8_t ID = 0x42; // random number to identify this balloon
 // LORA config
 double frequency = 433.9985; 
 byte spreadingFactor = 11;
-byte bandwidth = 0x70; // 125k
+byte bandwidth = 0x30; // 125k
 byte codingRate = 0x02; // 4_5
 boolean explicitHeaders = false;
 boolean rateOptimization = true;
