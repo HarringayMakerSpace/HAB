@@ -50,7 +50,8 @@ struct TGPS {
   byte PowerMode;
 } GPS;
 
-const uint8_t ID = 0x42; // random number to identify this balloon  
+//const uint8_t ID = 0x42; // random number to identify this balloon  
+const String ID = "$$test1";
 
 // LORA config
 double frequency = 433.9985; 
@@ -59,17 +60,6 @@ byte bandwidth = 0x30; // 125k
 byte codingRate = 0x02; // 4_5
 boolean explicitHeaders = false;
 boolean rateOptimization = true;
-
-// The LORA payload must be as small as possible. At high spreading factors transmission is very slow, 
-// several seconds for even small payloads, so longer is more susceptible to interference, 
-// and there are legal limits (link?) to permitted time on air.   
-struct TBinaryPacket {
-  uint8_t   id;
-  uint16_t  counter;
-  float     latitude;
-  float     longitude;
-  int32_t   alt;
-}  __attribute__ ((packed));
 
 int txCounter = 0; 
 
@@ -88,26 +78,26 @@ void loop() {
 
   // spin around reading GPS
   unsigned long sm = millis();
-  while (millis() < (sm+15000)) {
+  while (millis() < (sm+3000)) {
      CheckGPS();
   }
 
-  TBinaryPacket payload;
-  payload.id = ID;
-  payload.counter = txCounter++;
-  payload.latitude = GPS.Latitude;
-  payload.longitude = GPS.Longitude;
-  payload.alt = GPS.Altitude;
+  // $$test1,1,01:23:45,51.58680343,-0.10234091,23*28\n
 
-  unsigned long startSendMs = millis();
-  rf95.send((uint8_t*)&payload, sizeof(payload));
+  String sentence = ID + "," + txCounter++ + "," + 
+     (GPS.Hours < 10 ? "0" : "") + GPS.Hours + ":" + 
+     (GPS.Minutes < 10 ? "0" : "") + GPS.Minutes + ":" + 
+     (GPS.Seconds < 10 ? "0" : "") + GPS.Seconds + "," + 
+     String(GPS.Latitude, 6) + "," + 
+     String(GPS.Longitude, 6) + "," + 
+     GPS.Altitude;  
+
+  unsigned long startMillis = millis();
+  rf95.send((uint8_t*)sentence.c_str(), sentence.length());
   rf95.waitPacketSent();
+  unsigned long txTime = millis() - startMillis;
 
-  Serial.print(F("sent ")); Serial.print(sizeof(payload)); Serial.print(F(" bytes in:")); Serial.println(millis()-startSendMs); 
-  Serial.print(F(": ")); Serial.print(payload.counter); Serial.print(F(","));  Serial.print(payload.latitude, 8);
-  Serial.print(F(",")); Serial.print(payload.longitude, 8); Serial.print(F(",")); Serial.print(payload.alt); 
-  Serial.print(F(",")); Serial.print(GPS.Satellites); Serial.print(F(", Lock=")); Serial.print(GPS.Lock);
-  Serial.println();
+  Serial.print(F("sent in ")); Serial.print(txTime); Serial.print(" ms: "); Serial.println(sentence);
 }
 
 void initRF95() {
