@@ -139,7 +139,7 @@ String makeSentance() {
 }
 
 String xorChecksum(String s) {
-  byte b = s.charAt(0);
+  uint8_t b = s.charAt(0);
   for (int i=1; i<s.length(); i++) {
     b ^= s.charAt(i);
   }
